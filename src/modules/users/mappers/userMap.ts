@@ -1,59 +1,101 @@
+import { Mapper } from "@shared/infra/Mapper";
+import User from "../domain/user";
+import { UserDTO } from "../dtos/userDTO";
+import { UniqueEntityID } from "@shared/domain/UniqueEntityID";
+import { UserEmail } from "../domain/userEmail";
+import { Result } from "@shared/core/Result";
+import { UserFirstName } from "../domain/userFirstName";
+import { UserLastName } from "../domain/userLastName";
+import { UserEntity } from "@shared/infra/database/typeorm/entity/userEntity";
+import { TextUtils } from "@shared/utils/TextUtils";
 
-import { Mapper } from '../../../shared/infra/Mapper'
-import { User } from '../domain/user';
-import { UserDTO } from '../dtos/userDTO';
-import { UniqueEntityID } from '../../../shared/domain/UniqueEntityID';
-import { UserName } from '../domain/userName';
-import { UserPassword } from '../domain/userPassword';
-import { UserEmail } from '../domain/userEmail';
+export interface IUserMapPersistence {
+  readonly first_name: string;
+  readonly last_name: string;
+  readonly email: string;
+}
 
 export class UserMap implements Mapper<User> {
-  public static toDTO (user: User): UserDTO {
+  static toDTO(user: User): UserDTO {
     return {
-      username: user.username.value,
-      isEmailVerified: user.isEmailVerified,
-      isAdminUser: user.isAdminUser,
-      isDeleted: user.isDeleted
-    }
+      id: TextUtils.toNumber(user.id.toValue()),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    };
   }
 
-  public static toDomain (raw: any): User {
-    const userNameOrError = UserName.create({ name: raw.username });
-    const userPasswordOrError = UserPassword.create({ value: raw.user_password, hashed: true });
-    const userEmailOrError = UserEmail.create(raw.user_email);
+  static persistanceToDTO(entity: UserEntity): UserDTO {
+    return {
+      id: entity.id,
+      firstName: entity.first_name,
+      lastName: entity.last_name,
+      email: entity.email,
+    };
+  }
 
-    const userOrError = User.create({
-      username: userNameOrError.getValue(),
-      isAdminUser: raw.is_admin_user,
-      isDeleted: raw.is_deleted,
-      isEmailVerified: raw.is_email_verified,
-      password: userPasswordOrError.getValue(),
-      email: userEmailOrError.getValue(),
-    }, new UniqueEntityID(raw.base_user_id));
+  static persistanceToDomain(entity: UserEntity): User {
+    const firstNameOrError: Result<UserFirstName> = UserFirstName.create(
+      entity.first_name
+    );
+    const lastNameOrError: Result<UserLastName> = UserLastName.create(
+      entity.last_name
+    );
+    const emailOrError: Result<UserEmail> = UserEmail.create(entity.email);
+    const userOrError = User.create(
+      {
+        firstName: firstNameOrError.getValue(),
+        lastName: lastNameOrError.getValue(),
+        email: emailOrError.getValue(),
+      },
+      entity.id ? new UniqueEntityID(entity.id) : null
+    );
 
-    userOrError.isFailure ? console.log(userOrError.error) : '';
+    if (userOrError.isFailure) {
+      console.log(userOrError.error);
+    }
 
     return userOrError.isSuccess ? userOrError.getValue() : null;
   }
 
-  public static async toPersistence (user: User): Promise<any> {
-    let password: string = null;
-    if (!!user.password === true) {
-      if (user.password.isAlreadyHashed()) {
-        password = user.password.value;
-      } else {
-        password = await user.password.getHashedValue();
-      }
+  static toDomain(raw: any): User {
+    const firstNameOrError: Result<UserFirstName> = UserFirstName.create(
+      raw.firstName
+    );
+    const lastNameOrError: Result<UserLastName> = UserLastName.create(
+      raw.lastName
+    );
+    const emailOrError: Result<UserEmail> = UserEmail.create(raw.email);
+    const userOrError = User.create(
+      {
+        firstName: firstNameOrError.getValue(),
+        lastName: lastNameOrError.getValue(),
+        email: emailOrError.getValue(),
+      },
+      raw.userId ? new UniqueEntityID(raw.userId) : null
+    );
+
+    if (userOrError.isFailure) {
+      console.log(userOrError.error);
     }
 
+    return userOrError.isSuccess ? userOrError.getValue() : null;
+  }
+
+  static toPersistence(user: User): IUserMapPersistence {
+    // let password: string = null;
+    // if (!!user.password === true) {
+    //   if (user.password.isAlreadyHashed()) {
+    //     password = user.password.value;
+    //   } else {
+    //     password = await user.password.getHashedValue();
+    //   }
+    // }
+
     return {
-      base_user_id: user.userId.id.toString(),
-      user_email: user.email.value,
-      is_email_verified: user.isEmailVerified,
-      username: user.username.value,
-      user_password: password,
-      is_admin_user: user.isAdminUser,
-      is_deleted: user.isDeleted
-    }
+      first_name: user.firstName,
+      last_name: user.lastName,
+      email: user.email,
+    };
   }
 }

@@ -5,20 +5,24 @@
     "moduleResolution": "node",
     "pretty": true,
     "sourceMap": true,
-    "target": "es2017",
+    "target": "es6",
     "outDir": "./dist",
     "lib": ["es6"],
     "resolveJsonModule": true,
     "types": ["node", "jest"],
-    "typeRoots" : ["./node_modules/@types", "./src/@types"],
+    "typeRoots" : ["./src/@types", "./node_modules/@types"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "paths": {
+      "@config/*": ["./src/config/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@shared/*": ["./src/shared/*"]
+    }
   },
   "include": [
     "src/*.ts",
     "src/**/*.ts",
-    "src/**/*.js"
   ],
   "exclude": [
     "node_modules",

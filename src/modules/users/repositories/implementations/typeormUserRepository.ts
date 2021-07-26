@@ -1,0 +1,41 @@
+import { Repository, EntityTarget, Connection } from "typeorm";
+import TypeormBaseRepository from "@shared/infra/database/typeorm/typeormBaseRepository";
+import { IUserRepository } from "../interfaces/userRepository";
+import { IUserMapPersistence } from "@modules/users/mappers/userMap";
+import { UserEntity } from "@shared/infra/database/typeorm/entity/userEntity";
+
+export default class TypeormUserRepository
+  extends TypeormBaseRepository
+  implements IUserRepository
+{
+  private userRepository: Repository<UserEntity>;
+
+  constructor(userEntity: EntityTarget<UserEntity>) {
+    super();
+    this.getConnection().then((connection: Connection) => {
+      this.userRepository = connection.getRepository(userEntity);
+    });
+  }
+
+  async exists(email: string): Promise<boolean> {
+    const user: UserEntity = await this.userRepository.findOne({
+      where: {
+        email,
+      },
+    });
+
+    return !!user;
+  }
+
+  async save(user: IUserMapPersistence): Promise<void> {
+    await this.userRepository.save(user);
+  }
+
+  getUserByUserId(id: number): Promise<UserEntity> {
+    return this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+  }
+}

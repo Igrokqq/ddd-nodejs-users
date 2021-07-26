@@ -1,111 +1,53 @@
-
 import { UserEmail } from "./userEmail";
-import { UserName } from "./userName";
 import { UserId } from "./userId";
 import { UserCreated } from "./events/userCreated";
-import { UserPassword } from "./userPassword";
-import { JWTToken, RefreshToken } from "./jwt";
-import { UserLoggedIn } from "./events/userLoggedIn";
-import { UserDeleted } from "./events/userDeleted";
 import { UniqueEntityID } from "../../../shared/domain/UniqueEntityID";
 import { Result } from "../../../shared/core/Result";
 import { Guard } from "../../../shared/core/Guard";
 import { AggregateRoot } from "../../../shared/domain/AggregateRoot";
+import { UserFirstName } from "./userFirstName";
+import { UserLastName } from "./userLastName";
 
 interface UserProps {
   email: UserEmail;
-  username: UserName;
-  password: UserPassword;
-  isEmailVerified?: boolean;
-  isAdminUser?: boolean;
-  accessToken?: JWTToken;
-  refreshToken?: RefreshToken;
-  isDeleted?: boolean;
-  lastLogin?: Date;
+  firstName: UserFirstName;
+  lastName: UserLastName;
 }
 
-export class User extends AggregateRoot<UserProps> {
-
-  get userId (): UserId {
-    return UserId.create(this._id)
-      .getValue();
+export default class User extends AggregateRoot<UserProps> {
+  get userId(): UserId {
+    return UserId.create(this._id).getValue();
   }
 
-  get email (): UserEmail {
-    return this.props.email;
+  get firstName(): string {
+    return this.props.firstName.getValue();
   }
 
-  get username (): UserName {
-    return this.props.username;
+  get lastName(): string {
+    return this.props.lastName.getValue();
   }
 
-  get password (): UserPassword {
-    return this.props.password;
+  get email(): string {
+    return this.props.email.getValue();
   }
 
-  get accessToken (): string {
-    return this.props.accessToken;
+  private constructor(props: UserProps, id?: UniqueEntityID) {
+    super(props, id);
   }
 
-  get isDeleted (): boolean {
-    return this.props.isDeleted;
-  }
-
-  get isEmailVerified (): boolean {
-    return this.props.isEmailVerified;
-  }
-
-  get isAdminUser (): boolean {
-    return this.props.isAdminUser;
-  }
-
-  get lastLogin (): Date {
-    return this.props.lastLogin;
-  }
-
-  get refreshToken (): RefreshToken {
-    return this.props.refreshToken
-  }
-
-  public isLoggedIn (): boolean {
-    return !!this.props.accessToken && !!this.props.refreshToken
-  }
-
-  public setAccessToken (token: JWTToken, refreshToken: RefreshToken): void {
-    this.addDomainEvent(new UserLoggedIn(this));
-    this.props.accessToken = token;
-    this.props.refreshToken = refreshToken;
-    this.props.lastLogin = new Date();
-  }
-
-  public delete (): void {
-    if (!this.props.isDeleted) {
-      this.addDomainEvent(new UserDeleted(this));
-      this.props.isDeleted = true;
-    }
-  }
-
-  private constructor (props: UserProps, id?: UniqueEntityID) {
-    super(props, id)
-  }
-
-  public static create (props: UserProps, id?: UniqueEntityID): Result<User> {
+  public static create(props: UserProps, id?: UniqueEntityID): Result<User> {
     const guardResult = Guard.againstNullOrUndefinedBulk([
-      { argument: props.username, argumentName: 'username' },
-      { argument: props.email, argumentName: 'email' }
+      { argument: props.email, argumentName: "email" },
+      { argument: props.firstName, argumentName: "firstName" },
+      { argument: props.lastName, argumentName: "lastName" },
     ]);
 
     if (!guardResult.succeeded) {
-      return Result.fail<User>(guardResult.message)
+      return Result.fail<User>(guardResult.message);
     }
 
-    const isNewUser = !!id === false;
-    const user = new User({
-      ...props,
-      isDeleted: props.isDeleted ? props.isDeleted : false,
-      isEmailVerified: props.isEmailVerified ? props.isEmailVerified : false,
-      isAdminUser: props.isAdminUser ? props.isAdminUser : false
-    }, id);
+    const isNewUser = !id;
+    const user = new User(props, id);
 
     if (isNewUser) {
       user.addDomainEvent(new UserCreated(user));

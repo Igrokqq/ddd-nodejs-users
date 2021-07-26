@@ -1,88 +1,46 @@
-
 import { CreateUserDTO } from "./CreateUserDTO";
 import { CreateUserErrors } from "./CreateUserErrors";
-import { Either, Result, left, right } from "../../../../shared/core/Result";
-import { AppError } from "../../../../shared/core/AppError";
-import { IUserRepo } from "../../repos/userRepo";
-import { UseCase } from "../../../../shared/core/UseCase";
-import { UserEmail } from "../../domain/userEmail";
-import { UserPassword } from "../../domain/userPassword";
-import { UserName } from "../../domain/userName";
-import { User } from "../../domain/user";
+import { Result, left, right } from "@shared/core/Result";
+import { IUserRepository } from "@modules/users/repositories/interfaces/userRepository";
+import { UseCase } from "@shared/core/UseCase";
+import User from "@modules/users/domain/user";
+import { UserMap } from "@modules/users/mappers/userMap";
+import CreateUserValidation from "./CreateUserValidation";
+import { UseCaseValidationResult } from "@shared/core/UseCaseValidationResult";
+import { CreateUserResponse } from "./CreateUserResponse";
 
-type Response = Either<
-  CreateUserErrors.EmailAlreadyExistsError |
-  CreateUserErrors.UsernameTakenError |
-  AppError.UnexpectedError |
-  Result<any>,
-  Result<void>
->
+export class CreateUserUseCase
+  implements UseCase<CreateUserDTO, Promise<CreateUserResponse>>
+{
+  private userRepository: IUserRepository;
 
-export class CreateUserUseCase implements UseCase<CreateUserDTO, Promise<Response>> {
-  private userRepo: IUserRepo;
-  
-  constructor (userRepo: IUserRepo) {
-    this.userRepo = userRepo;
+  constructor(userRepository: IUserRepository) {
+    this.userRepository = userRepository;
   }
 
-  async execute (request: CreateUserDTO): Promise<Response> {
-    const emailOrError = UserEmail.create(request.email);
-    const passwordOrError = UserPassword.create({ value: request.password });
-    const usernameOrError = UserName.create({ name: request.username });
+  async execute(dto: CreateUserDTO): Promise<CreateUserResponse> {
+    const validationResult: UseCaseValidationResult =
+      CreateUserValidation.validate(dto);
 
-    const dtoResult = Result.combine([ 
-      emailOrError, passwordOrError, usernameOrError 
-    ]);
-
-    if (dtoResult.isFailure) {
-      return left(Result.fail<void>(dtoResult.error)) as Response;
+    if (!validationResult.isSuccess) {
+      return left(
+        Result.fail<User>(validationResult.error.toString())
+      ) as CreateUserResponse;
     }
 
-    const email: UserEmail = emailOrError.getValue();
-    const password: UserPassword = passwordOrError.getValue();
-    const username: UserName = usernameOrError.getValue();
+    const user: User = UserMap.toDomain(dto);
+    const userAlreadyExists: boolean = await this.userRepository.exists(
+      user.email
+    );
 
-    try {
-      const userAlreadyExists = await this.userRepo.exists(email);
-
-      if (userAlreadyExists) {
-        return left(
-          new CreateUserErrors.EmailAlreadyExistsError(email.value)
-        ) as Response;
-      }
-
-      try {
-        const alreadyCreatedUserByUserName = await this.userRepo
-        .getUserByUserName(username);
-
-        const userNameTaken = !!alreadyCreatedUserByUserName === true;
-
-        if (userNameTaken) {
-          return left (
-            new CreateUserErrors.UsernameTakenError(username.value)
-          ) as Response;
-        }
-      } catch (err) {}
-
-
-      const userOrError: Result<User> = User.create({
-        email, password, username,
-      });
-
-      if (userOrError.isFailure) {
-        return left(
-          Result.fail<User>(userOrError.error.toString())
-        ) as Response;
-      }
-
-      const user: User = userOrError.getValue();
-
-      await this.userRepo.save(user);
-
-      return right(Result.ok<void>())
-
-    } catch (err) {
-      return left(new AppError.UnexpectedError(err)) as Response;
+    if (userAlreadyExists) {
+      return left(
+        new CreateUserErrors.EmailAlreadyExistsError(user.email)
+      ) as CreateUserResponse;
     }
+
+    await this.userRepository.save(UserMap.toPersistence(user));
+
+    return right(Result.ok<void>());
   }
 }

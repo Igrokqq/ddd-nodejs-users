@@ -1,0 +1,25 @@
+{
+   "type": "postgres",
+   "host": "127.0.0.1",
+   "port": 5432,
+   "username": "postgres",
+   "password": "1234",
+   "database": "banking_app_v2",
+   "synchronize": false,
+   "logging": false,
+   "entities": [
+      "src/shared/infra/database/typeorm/entity/**/*{.ts,.js}",
+      "dist/shared/infra/database/typeorm/entity/**/*{.ts,.js}"
+   ],
+   "migrations": [
+      "src/shared/infra/database/typeorm/migration/**/*.ts"
+   ],
+   "subscribers": [
+      "src/shared/infra/database/typeorm/subscriber/**/*.ts"
+   ],
+   "cli": {
+      "entitiesDir": "src/shared/infra/database/typeorm/entity",
+      "migrationsDir": "src/shared/infra/database/typeorm/migration",
+      "subscribersDir": "src/shared/infra/database/typeorm/subscriber"
+   }
+}

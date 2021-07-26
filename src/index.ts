@@ -1,8 +1,6 @@
-
 // Infra
-import "./shared/infra/http/app"
-import "./shared/infra/database/sequelize"
+import "./shared/infra/http/app";
+import "./shared/infra/database/typeorm";
 
-// Subscriptions
-import "./modules/forum/subscriptions";
-
+// // Subscriptions
+// import "./modules/forum/subscriptions";

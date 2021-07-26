@@ -2,5 +2,5 @@
   "watch": ["src", "bin", "test", "scripts"],
   "ext": ".ts,.js,.pug,.css",
   "ignore": [],
-  "exec": "ts-node ./src/index.ts"
+  "exec": "npm run build && export NODE_ENV=development && ts-node -r dotenv/config ./src/index.ts dotenv_config_path=./.env.dev"
 }
