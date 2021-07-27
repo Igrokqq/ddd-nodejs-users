@@ -1,12 +1,12 @@
 import { Repository, EntityTarget, Connection } from "typeorm";
 import TypeormBaseRepository from "@shared/infra/database/typeorm/typeormBaseRepository";
-import { IUserRepository } from "../interfaces/userRepository";
+import { UserRepositoryInterface } from "../interfaces/userRepository";
 import { IUserMapPersistence } from "@modules/users/mappers/userMap";
 import { UserEntity } from "@shared/infra/database/typeorm/entity/userEntity";
 
 export default class TypeormUserRepository
   extends TypeormBaseRepository
-  implements IUserRepository
+  implements UserRepositoryInterface
 {
   private userRepository: Repository<UserEntity>;
 
@@ -35,6 +35,13 @@ export default class TypeormUserRepository
     return this.userRepository.findOne({
       where: {
         id,
+      },
+    });
+  }
+  getUserByEmail(email: string): Promise<UserEntity> {
+    return this.userRepository.findOne({
+      where: {
+        email,
       },
     });
   }

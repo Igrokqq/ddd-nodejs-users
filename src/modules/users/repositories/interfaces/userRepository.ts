@@ -1,11 +1,9 @@
 import { IUserMapPersistence } from "@modules/users/mappers/userMap";
 import { UserEntity } from "@shared/infra/database/typeorm/entity/userEntity";
 
-export interface IUserRepository {
+export interface UserRepositoryInterface {
   exists(userEmail: string): Promise<boolean>;
   getUserByUserId(userId: number): Promise<UserEntity>;
-  // getUserByUserId(userId: string): Promise<User>;
-  // getUserByUserName(userName: UserName | string): Promise<User>;
-  // save(user: User): Promise<void>;
+  getUserByEmail(email: string): Promise<UserEntity>;
   save(user: IUserMapPersistence): Promise<void>;
 }

@@ -1,15 +1,12 @@
 import redis from "redis";
 import { Redis } from "redis";
-import { authConfig, isProduction } from "../../../../config";
+import { authConfig } from "@config/index";
 
-const port = authConfig.redisServerPort;
-const host = authConfig.redisServerURL;
-const redisConnection: Redis = isProduction
-  ? redis.createClient(authConfig.redisConnectionString)
-  : redis.createClient(port, host); // creates a new client
+const connectionUrl: string = authConfig.redisConnectionString;
+const redisConnection: Redis = redis.createClient(connectionUrl);
 
 redisConnection.on("connect", () => {
-  console.log(`[Redis]: Connected to redis server at ${host}:${port}`);
+  console.log(`[Redis]: Connected to redis server at ${connectionUrl}`);
 });
 
-export { redisConnection };
+export default redisConnection;

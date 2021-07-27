@@ -7,11 +7,15 @@ import { Guard } from "../../../shared/core/Guard";
 import { AggregateRoot } from "../../../shared/domain/AggregateRoot";
 import { UserFirstName } from "./userFirstName";
 import { UserLastName } from "./userLastName";
+import { JwtAccessToken, JwtRefreshToken } from "./jwt";
+import { UserLoggedIn } from "./events/userLoggedIn";
 
 interface UserProps {
-  email: UserEmail;
-  firstName: UserFirstName;
-  lastName: UserLastName;
+  readonly email: UserEmail;
+  readonly firstName: UserFirstName;
+  readonly lastName: UserLastName;
+  accessToken?: JwtAccessToken;
+  refreshToken?: JwtRefreshToken;
 }
 
 export default class User extends AggregateRoot<UserProps> {
@@ -19,16 +23,38 @@ export default class User extends AggregateRoot<UserProps> {
     return UserId.create(this._id).getValue();
   }
 
-  get firstName(): string {
-    return this.props.firstName.getValue();
+  get firstName(): UserFirstName {
+    return this.props.firstName;
   }
 
-  get lastName(): string {
-    return this.props.lastName.getValue();
+  get lastName(): UserLastName {
+    return this.props.lastName;
   }
 
-  get email(): string {
-    return this.props.email.getValue();
+  get email(): UserEmail {
+    return this.props.email;
+  }
+
+  get accessToken(): string {
+    return this.props.accessToken;
+  }
+
+  get refreshToken(): string {
+    return this.props.refreshToken;
+  }
+
+  public isLoggedIn(): boolean {
+    return !!this.props.accessToken && !!this.props.refreshToken;
+  }
+
+  public setJwtTokens(
+    accessToken: JwtAccessToken,
+    refreshToken: JwtRefreshToken
+  ): void {
+    this.addDomainEvent(new UserLoggedIn(this));
+    this.props.accessToken = accessToken;
+    this.props.refreshToken = refreshToken;
+    // this.props.lastLogin = new Date();
   }
 
   private constructor(props: UserProps, id?: UniqueEntityID) {

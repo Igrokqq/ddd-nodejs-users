@@ -1,14 +1,8 @@
-
 export interface JWTClaims {
-  userId: string;
-  isEmailVerified: boolean;
-  email: string;
-  username: string;
-  adminUser: boolean;
-}; 
+  readonly userId: number;
+  readonly email: string;
+}
 
-export type JWTToken = string;
-
+export type JwtAccessToken = string;
 export type SessionId = string;
-
-export type RefreshToken = string;
+export type JwtRefreshToken = string;

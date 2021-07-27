@@ -1,7 +1,7 @@
 import { CreateUserDTO } from "./CreateUserDTO";
 import { CreateUserErrors } from "./CreateUserErrors";
 import { Result, left, right } from "@shared/core/Result";
-import { IUserRepository } from "@modules/users/repositories/interfaces/userRepository";
+import { UserRepositoryInterface } from "@modules/users/repositories/interfaces/userRepository";
 import { UseCase } from "@shared/core/UseCase";
 import User from "@modules/users/domain/user";
 import { UserMap } from "@modules/users/mappers/userMap";
@@ -12,9 +12,9 @@ import { CreateUserResponse } from "./CreateUserResponse";
 export class CreateUserUseCase
   implements UseCase<CreateUserDTO, Promise<CreateUserResponse>>
 {
-  private userRepository: IUserRepository;
+  private userRepository: UserRepositoryInterface;
 
-  constructor(userRepository: IUserRepository) {
+  constructor(userRepository: UserRepositoryInterface) {
     this.userRepository = userRepository;
   }
 
@@ -30,12 +30,12 @@ export class CreateUserUseCase
 
     const user: User = UserMap.toDomain(dto);
     const userAlreadyExists: boolean = await this.userRepository.exists(
-      user.email
+      user.email.getValue()
     );
 
     if (userAlreadyExists) {
       return left(
-        new CreateUserErrors.EmailAlreadyExistsError(user.email)
+        new CreateUserErrors.EmailAlreadyExistsError(user.email.getValue())
       ) as CreateUserResponse;
     }
 

@@ -11,6 +11,10 @@ export class UserId extends Entity<any> {
     super(null, id);
   }
 
+  getValue(): UniqueEntityID {
+    return this._id;
+  }
+
   public static create(id?: UniqueEntityID): Result<UserId> {
     if (id && Number.isNaN(id.toValue())) {
       return Result.fail<UserId>(`Incorrect UserId ${id}`);

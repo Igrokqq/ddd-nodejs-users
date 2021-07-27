@@ -1,5 +1,5 @@
 import { Result, left, right } from "@shared/core/Result";
-import { IUserRepository } from "@modules/users/repositories/interfaces/userRepository";
+import { UserRepositoryInterface } from "@modules/users/repositories/interfaces/userRepository";
 import { UseCase } from "@shared/core/UseCase";
 import User from "@modules/users/domain/user";
 import { UseCaseValidationResult } from "@shared/core/UseCaseValidationResult";
@@ -12,9 +12,9 @@ import { UserDTO } from "@modules/users/dtos/userDTO";
 export class GetUserUseCase
   implements UseCase<GetUserDto, Promise<GetUserResponse>>
 {
-  private userRepository: IUserRepository;
+  private userRepository: UserRepositoryInterface;
 
-  constructor(userRepository: IUserRepository) {
+  constructor(userRepository: UserRepositoryInterface) {
     this.userRepository = userRepository;
   }
 

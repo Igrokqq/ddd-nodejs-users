@@ -19,9 +19,9 @@ export class UserMap implements Mapper<User> {
   static toDTO(user: User): UserDTO {
     return {
       id: TextUtils.toNumber(user.id.toValue()),
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
+      firstName: user.firstName.getValue(),
+      lastName: user.lastName.getValue(),
+      email: user.email.getValue(),
     };
   }
 
@@ -34,7 +34,7 @@ export class UserMap implements Mapper<User> {
     };
   }
 
-  static persistanceToDomain(entity: UserEntity): User {
+  static persistanceToDomain(entity: UserEntity): User | null {
     const firstNameOrError: Result<UserFirstName> = UserFirstName.create(
       entity.first_name
     );
@@ -93,9 +93,9 @@ export class UserMap implements Mapper<User> {
     // }
 
     return {
-      first_name: user.firstName,
-      last_name: user.lastName,
-      email: user.email,
+      first_name: user.firstName.getValue(),
+      last_name: user.lastName.getValue(),
+      email: user.email.getValue(),
     };
   }
 }
