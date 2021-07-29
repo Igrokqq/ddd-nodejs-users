@@ -9,14 +9,14 @@ import { UserLastName } from "../domain/userLastName";
 import { UserEntity } from "@shared/infra/database/typeorm/entity/userEntity";
 import { TextUtils } from "@shared/utils/TextUtils";
 
-export interface IUserMapPersistence {
+export interface UserMapPersistanceInterface {
   readonly first_name: string;
   readonly last_name: string;
   readonly email: string;
 }
 
 export class UserMap implements Mapper<User> {
-  static toDTO(user: User): UserDTO {
+  static domainToDTO(user: User): UserDTO {
     return {
       id: TextUtils.toNumber(user.id.toValue()),
       firstName: user.firstName.getValue(),
@@ -26,6 +26,9 @@ export class UserMap implements Mapper<User> {
   }
 
   static persistanceToDTO(entity: UserEntity): UserDTO {
+    if (!entity) {
+      return null;
+    }
     return {
       id: entity.id,
       firstName: entity.first_name,
@@ -35,6 +38,10 @@ export class UserMap implements Mapper<User> {
   }
 
   static persistanceToDomain(entity: UserEntity): User | null {
+    if (!entity) {
+      return null;
+    }
+
     const firstNameOrError: Result<UserFirstName> = UserFirstName.create(
       entity.first_name
     );
@@ -52,13 +59,13 @@ export class UserMap implements Mapper<User> {
     );
 
     if (userOrError.isFailure) {
-      console.log(userOrError.error);
+      console.error(userOrError.error);
     }
 
     return userOrError.isSuccess ? userOrError.getValue() : null;
   }
 
-  static toDomain(raw: any): User {
+  static dtoToDomain(raw: UserDTO): User {
     const firstNameOrError: Result<UserFirstName> = UserFirstName.create(
       raw.firstName
     );
@@ -66,23 +73,23 @@ export class UserMap implements Mapper<User> {
       raw.lastName
     );
     const emailOrError: Result<UserEmail> = UserEmail.create(raw.email);
-    const userOrError = User.create(
+    const userOrError: Result<User> = User.create(
       {
         firstName: firstNameOrError.getValue(),
         lastName: lastNameOrError.getValue(),
         email: emailOrError.getValue(),
       },
-      raw.userId ? new UniqueEntityID(raw.userId) : null
+      raw.id ? new UniqueEntityID(raw.id) : null
     );
 
     if (userOrError.isFailure) {
-      console.log(userOrError.error);
+      console.error(userOrError.error);
     }
 
     return userOrError.isSuccess ? userOrError.getValue() : null;
   }
 
-  static toPersistence(user: User): IUserMapPersistence {
+  static domainToPersistance(user: User): UserMapPersistanceInterface {
     // let password: string = null;
     // if (!!user.password === true) {
     //   if (user.password.isAlreadyHashed()) {

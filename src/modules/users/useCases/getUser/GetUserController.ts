@@ -5,6 +5,7 @@ import { TextUtils } from "@shared/utils/TextUtils";
 import { GetUserResponse } from "./GetUserResponse";
 import { GetUserErrors } from "./GetUserErrors";
 import { GetUserUseCase } from "./GetUserUseCase";
+import { ValidationError } from "@shared/core/ValidationError";
 
 export class GetUserController extends BaseController {
   private _useCase: GetUserUseCase;
@@ -27,9 +28,12 @@ export class GetUserController extends BaseController {
       if (result.isLeft()) {
         const error = result.value;
 
+        console.error("error constrctor", error);
         switch (error.constructor) {
           case GetUserErrors.UserNotFound:
             return this.notFound(res, error.errorValue().message);
+          case ValidationError:
+            return this.validationFailed(res, error.errorValue().message);
           default:
             return this.fail(res, error.errorValue().message);
         }

@@ -4,7 +4,7 @@ import { UseCaseValidationResult } from "@shared/core/UseCaseValidationResult";
 import { UniqueEntityID } from "@shared/domain/UniqueEntityID";
 import { GetUserDto } from "./GetUserDto";
 
-export default class CreateUserValidation {
+export default class GetUserValidation {
   static validate(dto: GetUserDto): UseCaseValidationResult {
     const validationResult = Result.combine([
       UserId.create(new UniqueEntityID(dto.id)),
@@ -16,7 +16,7 @@ export default class CreateUserValidation {
           error: null,
         }
       : {
-          error: validationResult.error.toString(),
+          error: validationResult.error,
           isSuccess: false,
         };
   }

@@ -105,6 +105,17 @@ export abstract class BaseController {
     );
   }
 
+  public validationFailed(
+    res: express.Response,
+    message?: string
+  ): express.Response {
+    return BaseController.jsonResponse(
+      res,
+      422,
+      message || "Validation Failed"
+    );
+  }
+
   public todo(res: express.Response): express.Response {
     return BaseController.jsonResponse(res, 400, "TODO");
   }

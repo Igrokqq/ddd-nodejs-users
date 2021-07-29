@@ -1,7 +1,7 @@
 import { Repository, EntityTarget, Connection } from "typeorm";
 import TypeormBaseRepository from "@shared/infra/database/typeorm/typeormBaseRepository";
 import { UserRepositoryInterface } from "../interfaces/userRepository";
-import { IUserMapPersistence } from "@modules/users/mappers/userMap";
+import { UserMapPersistanceInterface } from "@modules/users/mappers/userMap";
 import { UserEntity } from "@shared/infra/database/typeorm/entity/userEntity";
 
 export default class TypeormUserRepository
@@ -27,7 +27,7 @@ export default class TypeormUserRepository
     return !!user;
   }
 
-  async save(user: IUserMapPersistence): Promise<void> {
+  async save(user: UserMapPersistanceInterface): Promise<void> {
     await this.userRepository.save(user);
   }
 

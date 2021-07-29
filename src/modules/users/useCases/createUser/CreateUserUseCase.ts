@@ -8,6 +8,7 @@ import { UserMap } from "@modules/users/mappers/userMap";
 import CreateUserValidation from "./CreateUserValidation";
 import { UseCaseValidationResult } from "@shared/core/UseCaseValidationResult";
 import { CreateUserResponse } from "./CreateUserResponse";
+import { ValidationError } from "@shared/core/ValidationError";
 
 export class CreateUserUseCase
   implements UseCase<CreateUserDTO, Promise<CreateUserResponse>>
@@ -24,11 +25,11 @@ export class CreateUserUseCase
 
     if (!validationResult.isSuccess) {
       return left(
-        Result.fail<User>(validationResult.error.toString())
+        new ValidationError(validationResult.error)
       ) as CreateUserResponse;
     }
 
-    const user: User = UserMap.toDomain(dto);
+    const user: User = UserMap.dtoToDomain(dto);
     const userAlreadyExists: boolean = await this.userRepository.exists(
       user.email.getValue()
     );
@@ -39,7 +40,7 @@ export class CreateUserUseCase
       ) as CreateUserResponse;
     }
 
-    await this.userRepository.save(UserMap.toPersistence(user));
+    await this.userRepository.save(UserMap.domainToPersistance(user));
 
     return right(Result.ok<void>());
   }

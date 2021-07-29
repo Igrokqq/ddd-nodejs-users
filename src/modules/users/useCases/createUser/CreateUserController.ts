@@ -6,6 +6,7 @@ import { TextUtils } from "@shared/utils/TextUtils";
 import { DecodedExpressRequest } from "@modules/users/infra/http/models/decodedRequest";
 import * as express from "express";
 import { CreateUserResponse } from "./CreateUserResponse";
+import { ValidationError } from "@shared/core/ValidationError";
 
 export class CreateUserController extends BaseController {
   private _useCase: CreateUserUseCase;
@@ -34,6 +35,8 @@ export class CreateUserController extends BaseController {
         switch (error.constructor) {
           case CreateUserErrors.EmailAlreadyExistsError:
             return this.conflict(res, error.errorValue().message);
+          case ValidationError:
+            return this.validationFailed(res, error.errorValue().message);
           default:
             return this.fail(res, error.errorValue().message);
         }

@@ -4,6 +4,7 @@ import LoginUseCase from "./LoginUseCase";
 import { LoginRequestDto, LoginResponseDto } from "./LoginDto";
 import { LoginResponse } from "./LoginResponse";
 import { LoginErrors } from "./LoginErrors";
+import { ValidationError } from "@shared/core/ValidationError";
 
 export default class LoginController extends BaseController {
   constructor(private readonly useCase: LoginUseCase) {
@@ -27,6 +28,8 @@ export default class LoginController extends BaseController {
         switch (error.constructor) {
           case LoginErrors.UserIncorrectEmail:
             return this.notFound(res, error.errorValue().message);
+          case ValidationError:
+            return this.validationFailed(res, error.errorValue().message);
           default:
             return this.fail(res, error.errorValue().message);
         }

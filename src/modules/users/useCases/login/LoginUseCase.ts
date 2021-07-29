@@ -1,4 +1,8 @@
-import { JwtAccessToken, JwtRefreshToken } from "@modules/users/domain/jwt";
+import {
+  JwtAccessToken,
+  JWTClaims,
+  JwtRefreshToken,
+} from "@modules/users/domain/jwt";
 import User from "@modules/users/domain/user";
 import { UserMap } from "@modules/users/mappers/userMap";
 import { UserRepositoryInterface } from "@modules/users/repositories/interfaces/userRepository";
@@ -6,6 +10,7 @@ import { AuthServiceInterface } from "@modules/users/services/authService";
 import { left, Result, right } from "@shared/core/Result";
 import { UseCase } from "@shared/core/UseCase";
 import { UseCaseValidationResult } from "@shared/core/UseCaseValidationResult";
+import { ValidationError } from "@shared/core/ValidationError";
 import { TextUtils } from "@shared/utils/TextUtils";
 import { LoginRequestDto, LoginResponseDto } from "./LoginDto";
 import { LoginErrors } from "./LoginErrors";
@@ -25,7 +30,7 @@ export default class LoginUseCase
       LoginValidation.validate(dto);
 
     if (!validationResult.isSuccess) {
-      return left(Result.fail<User>(validationResult.error.toString()));
+      return left(new ValidationError(validationResult.error)) as LoginResponse;
     }
 
     const user: User | null = UserMap.persistanceToDomain(
@@ -36,11 +41,14 @@ export default class LoginUseCase
       return left(new LoginErrors.UserIncorrectEmail(dto.email));
     }
 
-    const accessToken: JwtAccessToken = this.authService.signJWT({
+    const jwtClaims: JWTClaims = {
       userId: TextUtils.toNumber(user.userId.getValue().toValue()),
       email: user.email.getValue(),
-    });
-    const refreshToken: JwtRefreshToken = this.authService.createRefreshToken();
+    };
+    const accessToken: JwtAccessToken =
+      this.authService.signJwtAccessToken(jwtClaims);
+    const refreshToken: JwtRefreshToken =
+      this.authService.signJwtRefreshToken(jwtClaims);
 
     user.setJwtTokens(accessToken, refreshToken);
 

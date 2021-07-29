@@ -2,7 +2,7 @@ import { UniqueEntityID } from "@shared/domain/UniqueEntityID";
 import { Result } from "@shared/core/Result";
 import { Entity } from "@shared/domain/Entity";
 
-export class UserId extends Entity<any> {
+export class UserId extends Entity<UserId> {
   get id(): UniqueEntityID {
     return this._id;
   }
@@ -16,8 +16,10 @@ export class UserId extends Entity<any> {
   }
 
   public static create(id?: UniqueEntityID): Result<UserId> {
-    if (id && Number.isNaN(id.toValue())) {
-      return Result.fail<UserId>(`Incorrect UserId ${id}`);
+    const idValue: unknown = id.toValue();
+
+    if (id && (typeof idValue !== "number" || Number.isNaN(idValue))) {
+      return Result.fail<UserId>("UserId must be number");
     }
     return Result.ok<UserId>(new UserId(id));
   }

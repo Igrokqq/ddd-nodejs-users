@@ -1,13 +1,14 @@
 import { Result, left, right } from "@shared/core/Result";
 import { UserRepositoryInterface } from "@modules/users/repositories/interfaces/userRepository";
 import { UseCase } from "@shared/core/UseCase";
-import User from "@modules/users/domain/user";
 import { UseCaseValidationResult } from "@shared/core/UseCaseValidationResult";
 import { GetUserDto } from "./GetUserDto";
 import { GetUserResponse } from "./GetUserResponse";
 import GetUserValidation from "./GetUserValidation";
 import { UserMap } from "@modules/users/mappers/userMap";
 import { UserDTO } from "@modules/users/dtos/userDTO";
+import { GetUserErrors } from "./GetUserErrors";
+import { ValidationError } from "@shared/core/ValidationError";
 
 export class GetUserUseCase
   implements UseCase<GetUserDto, Promise<GetUserResponse>>
@@ -24,16 +25,18 @@ export class GetUserUseCase
 
     if (!validationResult.isSuccess) {
       return left(
-        Result.fail<User>(validationResult.error.toString())
+        new ValidationError(validationResult.error)
       ) as GetUserResponse;
     }
 
-    return right(
-      Result.ok<UserDTO>(
-        UserMap.persistanceToDTO(
-          await this.userRepository.getUserByUserId(dto.id)
-        )
-      )
+    const user: UserDTO = UserMap.persistanceToDTO(
+      await this.userRepository.getUserByUserId(dto.id)
     );
+
+    if (!user) {
+      return left(new GetUserErrors.UserNotFound(dto.id));
+    }
+
+    return right(Result.ok<UserDTO>(user));
   }
 }

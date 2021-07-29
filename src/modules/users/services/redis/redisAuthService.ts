@@ -1,6 +1,5 @@
 import { RedisClient } from "redis";
 import * as jwt from "jsonwebtoken";
-import randtoken from "rand-token";
 import { authConfig } from "@config/index";
 import { AbstractRedisClient } from "./abstractRedisClient";
 import { AuthServiceInterface } from "@modules/users/services/authService";
@@ -61,43 +60,37 @@ export default class RedisAuthService
     }
   }
 
-  public async deAuthenticateUser(email: string): Promise<void> {
+  public async logoutUserSessions(email: string): Promise<void> {
     await this.clearAllSessions(email);
   }
 
-  public createRefreshToken(): JwtRefreshToken {
-    return randtoken.uid(256) as JwtRefreshToken;
+  public signJwtAccessToken(claims: JWTClaims): JwtAccessToken {
+    return jwt.sign(claims, authConfig.jwtAccessTokenSecret, {
+      expiresIn: authConfig.jwtAccessTokenExpirationTime,
+    });
   }
-
-  /**
-   * @function signJWT
-   * @desc Signs the JWT token using the server secret with some claims
-   * about the current user.
-   */
-
-  public signJWT(props: JWTClaims): JwtAccessToken {
-    const claims: JWTClaims = {
-      email: props.email,
-      userId: props.userId,
-    };
-
-    return jwt.sign(claims, authConfig.secret, {
-      expiresIn: authConfig.tokenExpiryTime,
+  public signJwtRefreshToken(claims: JWTClaims): JwtAccessToken {
+    return jwt.sign(claims, authConfig.jwtRefreshTokenSecret, {
+      expiresIn: authConfig.jwtRefreshTokenExpirationTime,
     });
   }
 
-  /**
-   * @method decodeJWT
-   * @desc Decodes the JWT using the server secret. If successful decode,
-   * it returns the data from the token.
-   * @param {token} string
-   * @return Promise<any>
-   */
-
-  public decodeJWT(token: string): Promise<JWTClaims> {
-    return new Promise((resolve, reject) => {
-      jwt.verify(token, authConfig.secret, (err, decoded) => {
-        if (err) return resolve(null);
+  public decodeJwtAccessToken(token: string): Promise<JWTClaims> {
+    return new Promise((resolve) => {
+      jwt.verify(token, authConfig.jwtAccessTokenSecret, (error, decoded) => {
+        if (error) {
+          return resolve(null);
+        }
+        return resolve(decoded);
+      });
+    });
+  }
+  public decodeJwtRefreshToken(token: string): Promise<JWTClaims> {
+    return new Promise((resolve) => {
+      jwt.verify(token, authConfig.jwtRefreshTokenSecret, (error, decoded) => {
+        if (error) {
+          return resolve(null);
+        }
         return resolve(decoded);
       });
     });
@@ -198,15 +191,16 @@ export default class RedisAuthService
    * @method clearAllSessions
    * @desc Clears all active sessions for the current user.
    * @param {email} string
-   * @return Promise<any>
+   * @return Promise<number[]>
    */
-
-  public async clearAllSessions(email: string): Promise<any> {
+  public async clearAllSessions(email: string): Promise<number[]> {
     const keyValues = await this.getAllKeyValue(
       `*${this.jwtHashName}.${email}`
     );
-    const keys = keyValues.map((kv) => kv.key);
-    return Promise.all(keys.map((key) => this.deleteOne(key)));
+
+    return Promise.all(
+      keyValues.map((keyValue) => this.deleteOne(keyValue.key))
+    );
   }
 
   /**
@@ -222,10 +216,7 @@ export default class RedisAuthService
     refreshToken: string
   ): Promise<boolean> {
     const token = await this.getToken(email, refreshToken);
-    if (token) {
-      return true;
-    } else {
-      return false;
-    }
+
+    return !!token;
   }
 }
